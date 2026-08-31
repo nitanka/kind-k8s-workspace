@@ -1,0 +1,31 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8snamespacename
+spec:
+  crd:
+    spec:
+      names:
+        kind: k8sNamespaceName
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            namespacePrefix:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package namespaceconstraint
+        violation[{"msg": msg}] {
+            namespace := input.review.object.metadata.name
+            not startswith(namespace, input.parameters.namespacePrefix)
+            msg := sprintf(
+              "Namespace '%s' must start with '%s'",
+              [
+                namespace,
+                input.parameters.namespacePrefix
+              ]
+            )
+          }
+

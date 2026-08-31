@@ -1,0 +1,23 @@
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sMissingLabel
+
+metadata:
+  name: denyonmissing
+
+spec:
+  match:
+    namespaces:
+      - test-deployments
+    scope: Namespaced
+    kinds:
+      - apiGroups: [""]
+        kinds:
+          - Pod
+      - apiGroups: ["apps"]
+        kinds:
+          - Deployment
+
+  parameters:
+    labels:
+      - maintainer
