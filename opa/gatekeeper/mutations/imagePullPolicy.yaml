@@ -1,0 +1,58 @@
+---
+apiVersion: mutations.gatekeeper.sh/v1
+kind: Assign
+metadata:
+  name: imagepullalwaysdeployment
+spec:
+  applyTo:
+      - groups: ["apps"]
+        kinds: ["Deployment"]
+        versions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+  match:
+    scope: Namespaced
+    excludedNamespaces:
+      - kube-system
+      - kube-local
+      - kyverno
+      - gatekeeper-system
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    
+  location: "spec.containers[name:*].imagePullPolicy" 
+  #location in a Gatekeeper Assign resource is not Rego syntax.
+  #Cannot use containers[_]
+  parameters:
+    assign:
+      value: Always
+
+---
+apiVersion: mutations.gatekeeper.sh/v1
+kind: Assign
+metadata:
+  name: imagepullalwayspod
+spec:
+  applyTo:
+    - groups: [""]
+      kinds: ["Pod"]
+      versions: ["v1"]
+      operations: ["CREATE", "UPDATE"]
+  
+  match:
+    scope: Namespaced
+    excludedNamespaces:
+      - kube-local
+      - kube-system
+      - kyverno
+      - gatekeeper-system
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    
+  location: "spec.containers[name:*].imagePullPolicy" 
+  #location in a Gatekeeper Assign resource is not Rego syntax.
+  #Cannot use containers[_]
+  parameters:
+    assign:
+      value: "Always"
