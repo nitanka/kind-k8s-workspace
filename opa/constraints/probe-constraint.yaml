@@ -1,0 +1,16 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sProbeRules
+metadata:
+  name: denyprobemissing
+spec:
+  match:
+    scope: Namespaced
+    excludedNamespaces:
+      - kube-local
+      - kube-system
+      - kyverno
+      - gatekeeper-system
+    
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]

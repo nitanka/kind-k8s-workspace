@@ -1,0 +1,16 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sResourceLimit
+metadata:
+  name: denylimitmissing
+spec:
+  match:
+    scope: Clustered
+    excludedNamespaces:
+      - kube-system
+      - kube-local
+      - kyverno
+      - gatekeeper-system
+
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
