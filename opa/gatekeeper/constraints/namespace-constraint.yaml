@@ -1,0 +1,17 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: k8sNamespaceName
+metadata:
+  name: denynamespaceprefix
+spec:
+  match:
+    excludedNamespaces:
+      - gatekeeper-system
+      - kube-system
+      - kyverno
+    kinds:
+      - apiGroups: [""]
+        kinds: 
+          - Namespace
+    
+  parameters:
+    namespacePrefix: "test"

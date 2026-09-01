@@ -1,0 +1,21 @@
+apiVersion: mutations.gatekeeper.sh/v1
+kind: AssignMetadata
+metadata:
+  name: setclustername
+spec:
+  match:
+    scope: Namespaced
+    excludedNamespaces:
+    - kube-system
+    - kube-public
+    - kyverno
+    - gatekeeper-system
+    kinds:
+      - apiGroups: ["*"]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+  location: "metadata.labels.cluster"
+  parameters:
+    assign:
+      value: "kind-cluster"

@@ -1,0 +1,58 @@
+---
+apiVersion: mutations.gatekeeper.sh/v1
+kind: Assign
+metadata:
+  name: deploymentassignserviceaccout
+spec:
+  applyTo:
+    - groups: ["apps"]
+      kinds: ["Deployment"]
+      versions: ["v1"]
+      operations: ["CREATE"]
+  match:
+    scope: Namespaced
+    excludedNamespaces:
+      - kube-public
+      - kube-system
+      - gatekeeper-system
+      - kyverno
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+  location: "spec.template.spec.serviceAccountName"
+  parameters:
+    assign:
+      fromMetadata:
+        field: name
+    # pathTests:
+    #   - subPath: "spec.template.spec.serviceAccountName"
+    #     condition: MustNotExist
+---
+apiVersion: mutations.gatekeeper.sh/v1
+kind: Assign
+metadata:
+  name: podassignserviceaccout
+spec:
+  applyTo:
+    - groups: [""]
+      kinds: ["Pod"]
+      versions: ["v1"]
+      operations: ["CREATE"]
+  match:
+    scope: Namespaced
+    excludedNamespaces:
+      - kube-public
+      - kube-system
+      - gatekeeper-system
+      - kyverno
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+  location: "spec.serviceAccountName"
+  parameters:
+    assign:
+      fromMetadata:
+        field: name
+    # pathTests:
+    #   - subPath: "spec.serviceAccountName"
+    #     condition: MustNotExist
