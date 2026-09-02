@@ -1,0 +1,45 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8spodsecuritycontext
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sPodSecurityContext
+
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package verifypodsecurity
+
+        violation[{"msg": msg}] {
+          containers := input.review.object.spec.template.spec.containers[_]
+          not containers.securityContext
+
+          msg := sprintf(
+            "Security Context is not present for container %s",
+            [containers.name]
+          )
+        }
+        violation[{"msg": msg}] {
+          containers := input.review.object.spec.template.spec.containers[_]
+
+          containers.securityContext.allowPrivilegeEscalation != false
+
+          msg := sprintf(
+            "Previlege escalation is enabled for %s",
+            [containers.name]
+          )
+        }
+        violation[{"msg": msg}] {
+          containers := input.review.object.spec.template.spec.containers[_]
+
+          containers.securityContext.runAsNonRoot != true
+
+          msg := sprintf(
+            "Container '%s' must set runAsNonRoot to true",
+            [containers.name]
+          )
+        }
+        
