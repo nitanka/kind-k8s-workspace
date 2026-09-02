@@ -1,0 +1,17 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: k8sReqLimRatio
+metadata:
+  name: denyreqlimitratioviolation
+spec:
+  match:
+    scope: Namespaced
+    excludedNamespaces:
+      - kube-local
+      - kube-system
+      - kyverno
+      - gatekeeper-system
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]

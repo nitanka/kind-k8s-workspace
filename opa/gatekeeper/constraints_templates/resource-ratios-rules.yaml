@@ -1,0 +1,114 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sreqlimratio
+spec:
+  crd:
+    spec:
+      names:
+        kind: k8sReqLimRatio
+  
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8scheckresourceratio
+
+        # CPU request must exist
+        violation[{"msg": msg}] {
+            container := input.review.object.spec.template.spec.containers[_]
+            not container.resources.requests.cpu
+
+            msg := sprintf(
+                "CPU request is missing for container '%s'",
+                [container.name]
+            )
+        }
+
+        # CPU limit must exist
+        violation[{"msg": msg}] {
+            container := input.review.object.spec.template.spec.containers[_]
+            not container.resources.limits.cpu
+
+            msg := sprintf(
+                "CPU limit is missing for container '%s'",
+                [container.name]
+            )
+        }
+
+        # Memory request must exist
+        violation[{"msg": msg}] {
+            container := input.review.object.spec.template.spec.containers[_]
+            not container.resources.requests.memory
+
+            msg := sprintf(
+                "Memory request is missing for container '%s'",
+                [container.name]
+            )
+        }
+
+        # Memory limit must exist
+        violation[{"msg": msg}] {
+            container := input.review.object.spec.template.spec.containers[_]
+            not container.resources.limits.memory
+
+            msg := sprintf(
+                "Memory limit is missing for container '%s'",
+                [container.name]
+            )
+        }
+
+        violation[{"msg": msg}] {
+
+          container := input.review.object.spec.template.spec.containers[_]
+          
+          limit := container.resources.limits.cpu
+          request := container.resources.requests.cpu
+          ratio := limit/request
+          ratio <= 1
+          msg := sprintf(
+            "cpu limit/request <= 1 is violated for container %s",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+
+          container := input.review.object.spec.template.spec.containers[_]
+          limit := container.resources.limits.cpu
+          request := container.resources.requests.cpu
+          ratio := limit/request
+          ratio >= 2
+          msg := sprintf(
+            "cpu limit/request >= 2 is violated for container %s",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+
+          container := input.review.object.spec.template.spec.containers[_]
+          limit := units.parse(container.resources.limits.memory)
+          request := units.parse(container.resources.requests.memory)
+          ratio := limit/request
+          ratio <= 1
+
+          msg := sprintf(
+            "memory limit/request <= 1 is violated for container %s",
+            [container.name]
+          )
+        }
+
+        violation[{"msg": msg}] {
+
+          container := input.review.object.spec.template.spec.containers[_]
+          limit := units.parse(container.resources.limits.memory)
+          request := units.parse(container.resources.requests.memory)
+          ratio := limit/request
+          ratio >= 2
+
+          msg := sprintf(
+            "memory limit/request >= 2 is violated for container %s",
+            [container.name]
+          )
+        }
+
