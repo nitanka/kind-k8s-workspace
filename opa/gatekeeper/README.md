@@ -82,6 +82,23 @@ kubectl get crd constrainttemplates.templates.gatekeeper.sh \
   Resource Limits         Requires container      Deployment
                           resource limits such as 
                           CPU and memory          
+
+  Image Tag               Denies container        Deployment, Pod
+                          images tagged           
+                          `latest`                
+
+  Resource Request/Limit  Requires CPU and        Deployment, Pod
+  Ratio                   memory requests and     
+                          limits to be set, and   
+                          keeps the limit:request 
+                          ratio between 1 and 2   
+
+  Security Context        Requires a              Deployment, Pod
+                          `securityContext` that  
+                          sets                    
+                          `allowPrivilegeEscalation:
+                          false` and              
+                          `runAsNonRoot: true`     
   -----------------------------------------------------------------------
 
 ### Gatekeeper validation contract
@@ -125,6 +142,8 @@ Example use cases:
 -   Add standard labels or annotations to matching resources.
 -   Label newly created Namespace objects using a separate
     cluster-scoped mutator.
+-   Enable Istio sidecar injection on new Namespaces by setting
+    `istio-injection: enabled`.
 
 `AssignMetadata` does not require `applyTo`.
 
@@ -143,6 +162,8 @@ Current use case:
 
 -   Set `spec.serviceAccountName` for directly created Pods.
 -   Set `spec.template.spec.serviceAccountName` for Deployments.
+-   Default `imagePullPolicy` to `Always` for containers on Pods and
+    Deployments when not already set.
 
 `Assign` requires `applyTo` so Gatekeeper knows the exact
 Group/Version/Kind schema being mutated.
