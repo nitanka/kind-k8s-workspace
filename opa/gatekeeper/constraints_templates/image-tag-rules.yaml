@@ -1,0 +1,32 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8simagetags
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sImageTags
+  
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8simagetagverify
+
+        violation[{"msg": msg}] {
+
+          container := input.review.object.spec.template.spec.containers[_]
+
+          imageParts := split(container.image, ":")
+
+          lastIndex := count(imageParts) - 1
+          lastIndex > 0
+
+          imageTag := imageParts[lastIndex]
+          imageTag == "latest"
+
+          msg := sprintf(
+            "Image Tag cannot be 'latest' for container %s",
+            [container.image]
+          )
+        }

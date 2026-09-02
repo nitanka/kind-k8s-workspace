@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: test-deployments
+  name: my-dep
+  labels:
+    app: my-dep
+    environment: production
+    maintainer: oooo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-dep
+      maintainer: oooo
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: my-dep
+        environment: production  # <-- Add pod label here
+        maintainer: oooo
+    spec:
+      containers:
+      - name: nginx
+        image: docker.io/nginxinc/nginx-unprivileged:stable-alpine
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+        livenessProbe:
+          failureThreshold: 3
+          httpGet: 
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp-volume
+        - mountPath: /var/cache/nginx
+          name: cache-volume
+        - mountPath: /var/run
+          name: run-volume
+
+      # Define the ephemeral storage volumes
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      - name: cache-volume
+        emptyDir: {}
+      - name: run-volume
+        emptyDir: {}  
+             
