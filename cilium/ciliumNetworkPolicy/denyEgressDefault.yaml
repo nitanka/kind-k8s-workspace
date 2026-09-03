@@ -1,0 +1,10 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-egress-deny
+  namespace: cilium-test
+spec:
+  description: "Default policy to deny egress traffic"
+  endpointSelector: {}
+  egress:
+    - {}

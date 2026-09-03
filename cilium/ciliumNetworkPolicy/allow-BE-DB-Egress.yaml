@@ -1,0 +1,13 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-be-de-egress
+  namespace: cilium-test
+spec:
+  endpointSelector:
+    matchLabels:
+      app: backend
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            app: database
