@@ -41,7 +41,6 @@ command terminated with exit code 28
 kubectl exec -n cilium-test $BACKEND -- \
 curl -s --connect-timeout 2 http://database
 ```
-
 <code style="color : red">
 The above snippet are examples, the command will vary depending on the tests
 </code>
