@@ -1,0 +1,20 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: backend-ingress
+  namespace: cilium-test
+spec:
+
+  endpointSelector:
+    matchLabels:
+      app: backend
+
+  ingress:
+  - fromEndpoints:
+      - matchLabels:
+          app: frontend
+
+    toPorts:
+      - ports:
+        - port: "80"
+          protocol: TCP
