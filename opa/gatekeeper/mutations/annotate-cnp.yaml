@@ -1,0 +1,20 @@
+apiVersion: mutations.gatekeeper.sh/v1
+kind: AssignMetadata
+metadata:
+  name: setclusterannotation
+spec:
+  match:
+    scope: Namespaced
+    excludedNamespaces:
+      - kube-local
+      - kube-system
+      - kyverno
+      - gatekeeper-system
+    kinds:
+      - apiGroups: ["cilium.io"]
+        kinds: ["CiliumNetworkPolicy"]
+
+  location: 'metadata.annotations["k8s.cluster.name"]'
+  parameters:
+    assign:
+      value: 'kind-cilium-node-cluster'
