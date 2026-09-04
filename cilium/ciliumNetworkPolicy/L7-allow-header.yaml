@@ -1,0 +1,26 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-get-with-header
+  namespace: k8s-l7-test
+spec:
+  endpointSelector:
+    matchLabels:
+      app: api-admin
+  
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: client
+      
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+
+          rules:
+            http:
+              - path: "/cookies"
+                method: "GET"
+                headers:
+                  - "X-Api-Key: anything-at-all"
