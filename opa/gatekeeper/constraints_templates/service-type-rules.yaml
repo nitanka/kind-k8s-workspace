@@ -1,0 +1,24 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: denyloadbalancerservice
+spec:
+  crd:
+    spec:
+      names:
+        kind: DenyLoadBalancerService
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8sloadbalancertype
+
+        violation[{"msg": msg}] {
+
+          service := input.review.object.spec.type
+          service == "LoadBalancer"
+
+          msg := sprintf("LoadBalancer for %s not supported",
+            [input.review.object.metadata.name]
+          )
+        }
+
