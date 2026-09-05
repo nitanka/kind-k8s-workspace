@@ -1,0 +1,20 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: developer-role
+  namespace: test-deployments
+rules:
+  # 1. Allow standard read/write actions on core workloads
+  - apiGroups: [""] # Core API group
+    resources: ["pods", "services", "configmaps"]
+    verbs: ["*"]
+
+  # 2. Allow working with deployments in the apps group
+  # - apiGroups: ["apps"]
+  #   resources: ["deployments"]
+  #   verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+  # # 3. Explicitly block deletion capability for testing safety
+  # - apiGroups: [""]
+  #   resources: ["pods"]
+  #   verbs: ["delete"]

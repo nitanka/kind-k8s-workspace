@@ -1,0 +1,14 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: DenyWildcardRole
+metadata:
+  name: denywildinroles
+spec:
+  match:
+    excludedNamespaces:
+      - kyverno
+      - kube-local
+      - kube-system
+      - gatekeeper-system
+    kinds:
+      - apiGroups: ["rbac.authorization.k8s.io"]
+        kinds: ["Clusterrole", "Role"]
