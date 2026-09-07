@@ -1,0 +1,110 @@
+#AI generated manifest
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: login
+  namespace: cdn-v2-poc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: login
+  template:
+    metadata:
+      labels:
+        app: login
+    spec:
+      containers:
+      - name: app
+        image: hashicorp/http-echo
+        args:
+        - "-text=response-from-login"
+        ports:
+        - containerPort: 5678
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: login
+  namespace: cdn-v2-poc
+spec:
+  selector:
+    app: login
+  ports:
+  - port: 80
+    targetPort: 5678
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user
+  namespace: cdn-v2-poc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user
+  template:
+    metadata:
+      labels:
+        app: user
+    spec:
+      containers:
+      - name: app
+        image: hashicorp/http-echo
+        args:
+        - "-text=response-from-user"
+        ports:
+        - containerPort: 5678
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user
+  namespace: cdn-v2-poc
+spec:
+  selector:
+    app: user
+  ports:
+  - port: 80
+    targetPort: 5678
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin
+  namespace: cdn-v2-poc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin
+  template:
+    metadata:
+      labels:
+        app: admin
+    spec:
+      containers:
+      - name: app
+        image: hashicorp/http-echo
+        args:
+        - "-text=response-from-admin"
+        ports:
+        - containerPort: 5678
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin
+  namespace: cdn-v2-poc
+spec:
+  selector:
+    app: admin
+  ports:
+  - port: 80
+    targetPort: 5678
