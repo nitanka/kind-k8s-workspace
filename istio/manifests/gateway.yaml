@@ -1,0 +1,20 @@
+#ai generated
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: cdn-poc-gateway
+  namespace: cdn-poc
+spec:
+  selector:
+    istio: ingress
+
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+
+    hosts:
+    # - api1.poc.local
+    # - api2.poc.local
+    - api.poc.local
