@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  namespace: test-deployments
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+      volumeMounts:
+        - mountPath: "/run/spire/sockets"
+          name: csi-volume
+          readOnly: true
+
+  volumes:
+    - name: csi-volume
+      csi:
+        driver: csi.spiffe.io
+        readOnly: true

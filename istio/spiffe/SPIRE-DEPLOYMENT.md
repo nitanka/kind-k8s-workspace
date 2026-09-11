@@ -17,3 +17,6 @@ helm upgrade --install -n spire spire-crds spire --repo https://spiffe.github.io
 ```bash
 helm upgrade --install -n spire spire spire --repo https://spiffe.github.io/helm-charts-hardened/
 ```
+
+**Reference**
+https://artifacthub.io/packages/helm/spiffe/spire#install-instructions

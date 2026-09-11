@@ -1,0 +1,12 @@
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: nginx-per-pod-unique
+
+spec:
+  className: spire-spire
+  podSelector:
+    matchLabels:
+      app: nginx-spiffe-test
+  spiffeIDTemplate: spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{
+    .PodSpec.ServiceAccountName }}/pod/{{ .PodMeta.Name }}
