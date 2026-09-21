@@ -1,0 +1,14 @@
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: istio-sidecar-reg
+
+spec:
+  className: spire-spire
+  spiffeIDTemplate: "spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+  # Only pods carrying this label were injected with the "spire" sidecar
+  # template (istio-operator-spire.yaml), so only they get registered —
+  # cluster-wide, not restricted to one namespace.
+  podSelector:
+    matchLabels:
+      spiffe.io/spire-managed-identity: "true"

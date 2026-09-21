@@ -1,0 +1,46 @@
+# Separate values layer for the `istiod` Helm chart to enable SPIRE as the
+# identity source for mesh workloads (sidecars + ingress gateway).
+# Ref: https://istio.io/latest/docs/ops/integrations/spire/
+#
+# Kept as its own file (not merged into the base istiod values) so it can
+# be applied as an additional `helm.valueFiles` layer in ArgoCD, toggled
+# independently of the base install.
+#
+# How it works: SPIRE issues SVIDs DIRECTLY to each Envoy proxy over SDS via
+# a Unix Domain Socket mounted from the csi.spiffe.io CSI driver (already
+# running in this cluster). istiod's own CA is bypassed for these
+# workloads — this only changes the sidecar injection template and the
+# mesh trust domain, nothing about istiod's own CA config.
+#
+# trustDomain is set to "example.org" to match SPIRE's existing
+# trust_domain (kubectl get configmap -n spire spire-server -o yaml).
+#
+# Apply with:
+#   helm upgrade istiod istio/istiod -n istio-system \
+#     -f <base-values.yaml> -f istiod-values-spire.yaml
+#
+# Workloads still need a ClusterSPIFFEID registration — see
+# manifests/sidecar-clusterspiffeid.yaml — and the pod must carry the
+# label spiffe.io/spire-managed-identity: "true" to pick up this
+# injection template.
+
+meshConfig:
+  trustDomain: example.org
+
+sidecarInjectorWebhook:
+  templates:
+    spire: |
+      labels:
+        spiffe.io/spire-managed-identity: "true"
+      spec:
+        initContainers:
+        - name: istio-proxy
+          volumeMounts:
+          - name: workload-socket
+            mountPath: /run/secrets/workload-spiffe-uds
+            readOnly: true
+        volumes:
+          - name: workload-socket
+            csi:
+              driver: "csi.spiffe.io"
+              readOnly: true
