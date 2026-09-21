@@ -24,3 +24,8 @@ kubectl exec -ti vault-0 -- vault operator unseal # ... Unseal Key 1
 kubectl exec -ti vault-0 -- vault operator unseal # ... Unseal Key 2
 kubectl exec -ti vault-0 -- vault operator unseal # ... Unseal Key 3
 ```
+
+4. Verify the vault pods are running
+```bash
+kubectl get pods -l app.kubernetes.io/name=vault
+```
