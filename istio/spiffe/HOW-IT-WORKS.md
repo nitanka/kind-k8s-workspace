@@ -65,3 +65,11 @@
         │    process-to-kernel verification, happens on EVERY connection
         ▼
 6. Match → SVID minted and streamed back. No match → connection refused.
+
+**How the agent gets information**
+
+1. Process connects to the Workload API Unix socket.
+2. spire-agent calls SO_PEERCRED on that socket connection — a kernel feature that hands back the real PID/UID/GID of whoever is on the other end, unforgeable by the connecting process itself.
+3. Agent reads /proc/<that-pid>/cgroup on the host — gets the cgroup path, extracts the embedded container ID.
+4. Agent calls the Kubelet's local API on that node with that container ID, asking "which pod/container does this belong to?" — Kubelet answers with pod UID, namespace, service account, labels, etc. (this is the actual source of truth correlating container ID → k8s object; the cgroup path alone doesn't carry pod metadata, just the container ID).
+5. Agent builds the k8s:pod-uid:... (and any other configured) selectors from that answer and matches them against registration entries.
