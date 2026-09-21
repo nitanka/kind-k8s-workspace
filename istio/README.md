@@ -12,7 +12,7 @@ helm install istio-base istio/base -n istio-system --create-namespace --wait
 
 - It will install the control plane of Istio
 ```bash
-$ helm install istiod istio/istiod --namespace istio-system --set --wait
+helm install istio-base istio/base -n istio-system --create-namespace --wait
 ```
 
 <code style="color : red">Note: Not install in ambient mode</code>
