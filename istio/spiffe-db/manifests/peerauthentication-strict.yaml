@@ -1,0 +1,12 @@
+# Mesh-wide STRICT mTLS. Placed in istio-system with no `selector`, so it
+# applies as the mesh-default per Istio's PeerAuthentication precedence
+# rules (namespace-level PeerAuthentication in a workload's own namespace
+# would still override this if ever added).
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT
