@@ -1,0 +1,6 @@
+
+server:
+  extraLabels:
+    spiffe.io/spire-managed-identity: "true"
+  annotations:
+    inject.istio.io/templates: "sidecar,spire"

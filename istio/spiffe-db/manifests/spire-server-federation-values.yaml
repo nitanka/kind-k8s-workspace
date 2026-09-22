@@ -1,0 +1,33 @@
+# Enables SPIRE Server's SPIFFE Federation bundle endpoint (port 8443).
+# OIDC endpoint will be used by other services which needs JWT endpoint.
+
+# jwtIssuer must be a network address relying parties can actually reach —
+# not the external-looking oidc-discovery.example.org default, which isn't
+# resolvable anywhere (not a real DNS zone, and a CoreDNS rewrite fixing it
+# only in-cluster wouldn't survive on EKS's managed CoreDNS add-on). This
+# drives both the JWT-SVID `iss` claim and the OIDC discovery document's
+# `issuer` field — Vault's OIDC discovery client requires these to match
+# the URL it was configured with exactly, or it rejects the endpoint.
+global:
+  spire:
+    jwtIssuer: "https://spire-spiffe-oidc-discovery-provider.spire.svc.cluster.local"
+
+spire-server:
+  federation:
+    enabled: true
+    bundleEndpoint:
+      enabled: true
+
+# Per-pod opt-in only — NOT the namespace label. The injector webhook has a
+# catch-all rule matching namespaces with no istio-injection/istio.io/rev
+# label, so a pod-level annotation triggers injection without touching
+# spire-server or the spire-agent/CSI-driver DaemonSets, which must stay
+# out of the mesh (Istio itself depends on SPIRE for its CA material).
+spiffe-oidc-discovery-provider:
+  podAnnotations:
+    inject.istio.io/templates: "sidecar,spire"
+  podLabels:
+    # sidecar.istio.io/inject must be a LABEL, not an annotation — the
+    # injector webhook's objectSelector only ever matches on labels.
+    sidecar.istio.io/inject: "true"
+    spiffe.io/spire-managed-identity: "true"
