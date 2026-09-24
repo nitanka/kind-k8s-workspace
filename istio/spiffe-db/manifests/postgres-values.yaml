@@ -1,0 +1,77 @@
+# bitnami/postgresql values for this PoC. No secrets in this file —
+# the vaultadmin bootstrap password comes from a Secret created out of
+# band (kubectl, not committed) and injected as an env var, read by the
+# initdb script at container-runtime via $VAULTADMIN_PASSWORD.
+#
+# Deploy:
+#   kubectl create namespace postgres
+#   kubectl create secret generic postgres-vaultadmin -n postgres \
+#     --from-literal=VAULTADMIN_PASSWORD="$(openssl rand -base64 24)"
+#   helm install postgres bitnami/postgresql --version 18.11.6 -n postgres -f postgres-values.yaml
+#
+# The `postgres` superuser password is left unset — the chart
+# auto-generates one into its own Secret (postgres-postgresql), which we
+# never need: initdb scripts run locally inside the container with an
+# already-authenticated connection, and Vault authenticates as
+# `vaultadmin`, not the superuser.
+
+auth:
+  database: appdb
+  postgresPassword: ""
+
+primary:
+  # SPIRE-backed sidecar, same pattern as vault-0 and the OIDC discovery
+  # provider — sidecar.istio.io/inject must be a LABEL (webhook
+  # objectSelector only matches labels, not annotations); the template
+  # selection itself is an annotation.
+  podLabels:
+    sidecar.istio.io/inject: "true"
+    spiffe.io/spire-managed-identity: "true"
+  podAnnotations:
+    inject.istio.io/templates: "sidecar,spire"
+
+  extraEnvVarsSecret: postgres-vaultadmin
+  extraEnvVars:
+    # psql honors PGPASSWORD automatically — needed because auth is md5,
+    # not trust, even for local-socket connections. The chart auto-
+    # generates this into its own Secret (name is deterministic:
+    # <release-name>-postgresql), created alongside this StatefulSet.
+    - name: PGPASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-postgresql
+          key: postgres-password
+
+  initdb:
+    scripts:
+      01-vaultadmin.sh: |
+        #!/bin/bash
+        set -euo pipefail
+        # vaultadmin: LOGIN + CREATEROLE lets it create/drop the short-lived
+        # roles Vault mints per lease. It is NOT a superuser — its ability
+        # to grant app_readwrite membership comes from holding that role
+        # WITH ADMIN OPTION, granted below, not from superuser privileges.
+        # "postgres" is the Bitnami image's fixed superuser name — there is
+        # no POSTGRES_USER env var to read it from.
+        psql -v ON_ERROR_STOP=1 --username postgres --dbname postgres <<-EOSQL
+          CREATE ROLE vaultadmin WITH LOGIN CREATEROLE PASSWORD '${VAULTADMIN_PASSWORD}';
+          CREATE ROLE app_readwrite NOLOGIN;
+          GRANT app_readwrite TO vaultadmin WITH ADMIN OPTION;
+        EOSQL
+
+        # app_readwrite: the role Vault's dynamic users get granted into.
+        # It carries the actual data privileges, so any lease-scoped user
+        # granted this role can operate on appdb without vaultadmin
+        # needing per-user, per-table GRANTs.
+        psql -v ON_ERROR_STOP=1 --username postgres --dbname "$POSTGRES_DATABASE" <<-EOSQL
+          GRANT CONNECT ON DATABASE "$POSTGRES_DATABASE" TO app_readwrite;
+          GRANT USAGE ON SCHEMA public TO app_readwrite;
+          GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_readwrite;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_readwrite;
+          -- serial/identity columns need their backing sequence granted
+          -- separately — ALTER DEFAULT PRIVILEGES ... ON TABLES does not
+          -- cover sequences, and INSERT into a serial column fails with
+          -- "permission denied for sequence ..." without this.
+          GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_readwrite;
+          ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app_readwrite;
+        EOSQL

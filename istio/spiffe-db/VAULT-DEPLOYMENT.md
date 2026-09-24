@@ -123,6 +123,14 @@ Decoding the JWT (base64) shows `sub: spiffe://example.org/ns/<namespace>/sa/<se
 
 **Open item:** no automated re-sync of `oidc_discovery_ca_pem` on root CA rotation yet. SPIRE already auto-publishes its current bundle to the `spire-bundle` ConfigMap (`BundlePublisher: k8s_configmap` plugin) — a small `CronJob` reading that ConfigMap and re-running the `vault write auth/jwt/config` step on change would close this gap. Not yet built.
 
+## Database secrets engine
+
+Mounted, not yet configured — no database is deployed in this cluster to point at:
+```bash
+vault secrets enable database
+```
+Once a real database exists, this is where the short-lived-credential flow described earlier (SPIRE SVID → Vault login → dynamic DB credential) gets wired up: `database/config/<name>` for the connection, then a `database/roles/<name>` creation statement, then `vault read database/creds/<role>` returns a fresh, TTL'd username/password pair per request.
+
 
 ## Namespace Annotation for istio injection
 
