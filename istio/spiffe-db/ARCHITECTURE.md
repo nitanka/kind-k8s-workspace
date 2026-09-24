@@ -109,4 +109,5 @@ These two layers stack, they don't replace each other: the JWT login request to 
 - [SPIRE-DEPLOYMENT.md](SPIRE-DEPLOYMENT.md) — SPIRE install, and using it as Istio's CA
 - [VAULT-DEPLOYMENT.md](VAULT-DEPLOYMENT.md) — bringing Vault into the mesh, `auth/jwt` setup, the issuer/CA-pinning reasoning
 - [VAULT-DATABASE-ENGINE.md](VAULT-DATABASE-ENGINE.md) — Postgres deployment, `vaultadmin`/`app_readwrite` design, the `database` secrets engine wiring, root rotation
+- [VAULT-CONCEPTS.md](VAULT-CONCEPTS.md) — general reference for Vault's path structure (`auth/*/config` vs `role` vs `login`, `database/config` vs `roles` vs `creds`, leases) — read this first if any Vault path above looks unfamiliar
 - [README.md](README.md) — STRICT mTLS deployment/testing steps, including the raw-pod-IP-vs-Service gotcha

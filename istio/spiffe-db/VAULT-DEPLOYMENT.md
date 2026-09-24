@@ -135,3 +135,40 @@ Once a real database exists, this is where the short-lived-credential flow descr
 ## Namespace Annotation for istio injection
 
 Namespace-level `istio-injection=enabled` only controls whether a sidecar gets injected at all — it doesn't control which injection template is used. By default it only applies the standard sidecar template (istiod's own Citadel-issued cert).
+
+## Recovering after Vault is wiped (kind cluster stop/restart, PVC deleted, etc.)
+
+Hit this for real: the kind cluster's Docker containers stopped between sessions, and rather than track down the old unseal key, we re-initialized Vault from scratch (`helm uninstall` + delete PVC + reinstall — same acceptable-data-loss approach as the first install). Everything below had to be rebuilt, since a fresh Vault has empty storage even though `spire`/`postgres` survived untouched.
+
+**What survives a Vault wipe, unprompted:** SPIRE, Istio, and Postgres — their own StatefulSets/PVCs are untouched. **What doesn't:** every auth method, secrets engine config, and role Vault had — all of it lived only in Vault's now-deleted storage.
+
+1. Reinstall, init, unseal — same steps as the first-time install above.
+2. **Reset `vaultadmin`'s Postgres password** — the old Vault instance had rotated it (see `VAULT-DATABASE-ENGINE.md`) and took that knowledge with it when destroyed; nobody else ever knew the current value. Reset via the superuser:
+   ```bash
+   kubectl exec postgres-postgresql-0 -n postgres -c postgresql -- psql -h localhost -U postgres -d postgres -c \
+     "ALTER ROLE vaultadmin WITH PASSWORD '<newly generated>';"
+   ```
+3. Re-enable both mounts (empty shells until reconfigured):
+   ```bash
+   vault auth enable jwt
+   vault secrets enable database
+   ```
+4. Redo `auth/jwt/config`, `auth/jwt/role/spire-workload`, `database/config/postgres`, `database/roles/app-readwrite` — the exact same commands as their first-time setup earlier in this doc and in `VAULT-DATABASE-ENGINE.md`.
+5. Immediately `vault write -f database/rotate-root/postgres` again, same reasoning as the first time.
+
+**A real, non-obvious failure hit during this recovery — the OIDC discovery provider's cert lost a SAN entry after restart:** `auth/jwt/config` failed again with the exact same issuer-mismatch-shaped error, even though `jwtIssuer` was already correctly set from before. The actual cause this time was different: the OIDC discovery provider's TLS cert SAN list only had `spire-spiffe-oidc-discovery-provider.spire.svc` (3-label short form) after the controller-manager re-reconciled post-restart — missing the 5-label FQDN (`....svc.cluster.local`) it had before, even though `jwtIssuer` and the connection URL both still used the 5-label form. `autoPopulateDNSNames` is not deterministic across controller-manager restarts — it had genuinely worked correctly before (verified with real TLS validation, not skipped), and then didn't after a restart, seemingly depending on Service/EndpointSlice visibility timing at reconcile time.
+
+**The fix:** stop relying on `autoPopulateDNSNames` for this critical hostname — add it as an explicit, static entry in `spire-server.controllerManager.identities.clusterSPIFFEIDs.oidc-discovery-provider.dnsNameTemplates` (see `manifests/spire-server-federation-values.yaml`), so it's a fixed config value instead of something that can silently vary:
+```yaml
+spire-server:
+  controllerManager:
+    identities:
+      clusterSPIFFEIDs:
+        oidc-discovery-provider:
+          dnsNameTemplates:
+            - "oidc-discovery.{{ .TrustDomain }}"
+            - "spire-spiffe-oidc-discovery-provider.spire.svc.cluster.local"
+```
+Apply, then `kubectl rollout restart deployment/spire-spiffe-oidc-discovery-provider -n spire` to force a fresh registration entry with the explicit DNS name included.
+
+See `VAULT-CONCEPTS.md` for what each of these paths (`auth/*/config` vs `role` vs `login`, `database/config` vs `roles` vs `creds`) actually means and why both halves are required.

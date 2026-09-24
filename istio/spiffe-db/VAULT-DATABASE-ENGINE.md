@@ -1,3 +1,5 @@
+See [VAULT-CONCEPTS.md](VAULT-CONCEPTS.md) for what `config`/`roles`/`creds` mean at a path-structure level, before diving into the specifics below.
+
 ## Enable database engine
 ```bash
 export VAULT_TOKEN="hvs...."

@@ -17,6 +17,20 @@ spire-server:
     enabled: true
     bundleEndpoint:
       enabled: true
+  controllerManager:
+    identities:
+      clusterSPIFFEIDs:
+        oidc-discovery-provider:
+          # autoPopulateDNSNames only reliably adds up to the 3-label
+          # short form (name.namespace.svc) — the 5-label FQDN
+          # (....svc.cluster.local) is NOT guaranteed even though it's
+          # what jwtIssuer above uses and what Istio's Envoy expects for
+          # its own SNI/routing (a shorter hostname got a 400 from Envoy
+          # even though DNS resolved fine). Add it explicitly rather than
+          # relying on auto-population, so it survives pod restarts.
+          dnsNameTemplates:
+            - "oidc-discovery.{{ .TrustDomain }}"
+            - "spire-spiffe-oidc-discovery-provider.spire.svc.cluster.local"
 
 # Per-pod opt-in only — NOT the namespace label. The injector webhook has a
 # catch-all rule matching namespaces with no istio-injection/istio.io/rev
